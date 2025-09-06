@@ -3,6 +3,8 @@ import json
 import pandas as pd
 from typing import List, Dict
 
+from src.config import SRC_PATH, SRC_DOWNLOADS, SRC_EXTRAIDOS
+
 class StorageHandler:
     def __init__(self, dados: List[Dict]):
         self.dados = dados

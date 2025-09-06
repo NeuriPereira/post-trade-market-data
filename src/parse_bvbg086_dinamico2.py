@@ -3,6 +3,8 @@ import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
+from src.config import SRC_EXTRAIDOS
+
 # Namespace ISO e BVMF
 # define o namespace XML que o ElementTree precisa para localizar os elementos. 
 # No caso, "urn:bvmf.217.01.xsd
@@ -74,18 +76,20 @@ def parse_bvbg086_xml(caminho_xml):
 """
 def parse_diretorio_bvbg086(pasta):
     todos_dados = []
-    for nome_arquivo in os.listdir(pasta):
-        if nome_arquivo.endswith(".xml"):
-            caminho = os.path.join(pasta, nome_arquivo)
-            print(f"📄 Processando: {caminho}")
-            dados = parse_bvbg086_xml(caminho)
-            todos_dados.extend(dados)
+    for root, _, files in os.walk(pasta):
+        for nome_arquivo in files:
+            if nome_arquivo.endswith(".xml"):
+                caminho = os.path.join(root, nome_arquivo)
+                print(f"📄 Processando: {caminho}")
+                dados = parse_bvbg086_xml(caminho)
+                todos_dados.extend(dados)
     return todos_dados
 
 # Exemplo de uso
 if __name__ == "__main__":
-    pasta = "/data/EstudoPython/download_arquivo/src/extraidos/2025-06-30/PR250630"
-    registros = parse_diretorio_bvbg086(pasta)
+    #pasta = "/data/EstudoPython/download_arquivo/src/extraidos/2025-06-30/PR250630"
+    #pasta = SRC_EXTRAIDOS
+    registros = parse_diretorio_bvbg086(SRC_EXTRAIDOS)
     print(f"✅ Total de registros extraídos: {len(registros)}")
     for r in registros[:5]:
         print(r)

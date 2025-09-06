@@ -3,6 +3,7 @@ import os
 import zipfile
 from datetime import datetime
 
+from src.config import SRC_EXTRAIDOS
 
 """Função para extrair conteúdo do arquivo .zip
    Parâmetros:
@@ -10,7 +11,7 @@ from datetime import datetime
         pasta_destino_base: onde salvar o arquivo extraído.
         data_str: data que será usada para organizar a pasta de saída
 """
-def extrair_conteudo_zip(caminho_zip, pasta_destino_base="./extraidos", data_str="2025-06-30"):
+def extrair_conteudo_zip(caminho_zip, pasta_destino_base=SRC_EXTRAIDOS, data_str="2025-06-30"):
     
     #se o arquivo .zip não existir, aborta e exibe erro
     if not os.path.exists(caminho_zip):

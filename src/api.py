@@ -4,10 +4,11 @@ from storage_handler import StorageHandler
 # Aqui vamos simular que os dados já foram parseados pelo parse_bvbg086_dinamico2
 # Em produção, você chamaria o parse antes e injetaria aqui
 from parse_bvbg086_dinamico2 import parse_diretorio_bvbg086
+from src.config import SRC_EXTRAIDOS
 
 # Pasta onde estão os XMLs
-PASTA_XML = "/data/EstudoPython/download_arquivo/extraidos/2025-06-30/PR250630"
-registros = parse_diretorio_bvbg086(PASTA_XML)
+#PASTA_XML = "/data/EstudoPython/download_arquivo/extraidos/2025-06-30/PR250630"
+registros = parse_diretorio_bvbg086(SRC_EXTRAIDOS)
 
 # Cria o handler
 handler = StorageHandler(registros)
