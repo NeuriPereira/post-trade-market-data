@@ -45,6 +45,8 @@ def parse_bvbg086_xml(caminho_xml):
                     "ticker": text("bvmf:SctyId/bvmf:TckrSymb"),
                     "data": text("bvmf:TradDt/bvmf:Dt"),
                     "codigo": text("bvmf:FinInstrmId/bvmf:OthrId/bvmf:Id"),
+                    "trad_qty": text("bvmf:TradDtls/bvmf:TradQty"),
+                    
                 }
 
                 # A tag <FinInstrmAttrbts> contém muitos campos opcionais (preço, volume, bid, ask etc).
@@ -85,11 +87,3 @@ def parse_diretorio_bvbg086(pasta):
                 todos_dados.extend(dados)
     return todos_dados
 
-# Exemplo de uso
-if __name__ == "__main__":
-    #pasta = "/data/EstudoPython/download_arquivo/src/extraidos/2025-06-30/PR250630"
-    #pasta = SRC_EXTRAIDOS
-    registros = parse_diretorio_bvbg086(SRC_EXTRAIDOS)
-    print(f"✅ Total de registros extraídos: {len(registros)}")
-    for r in registros[:5]:
-        print(r)
