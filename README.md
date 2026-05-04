@@ -177,13 +177,15 @@ curl "http://localhost:8000/ativos/PETR4?data=2026-04-17"
 
 Dispara o pipeline completo para uma data: download → extração → parse → armazenamento.
 
+![POST /pipeline/run — 225.482 registros processados](assets/screenshots/swagger-pipeline-run.png)
+
 | Parâmetro | Tipo | Descrição |
 |---|---|---|
 | `data` | `string` | Data do pregão no formato `YYYY-MM-DD` |
 
 ```bash
-curl -X POST "http://localhost:8000/pipeline/run?data=2026-04-17"
-# {"status": "ok", "data": "2026-04-17", "registros": 195432}
+curl -X POST "http://localhost:8000/pipeline/run?data=2026-04-30"
+# {"status": "ok", "data": "2026-04-30", "registros": 225482}
 ```
 
 Retorna `422` se o arquivo não estiver disponível para a data informada.
@@ -194,20 +196,22 @@ Retorna `422` se o arquivo não estiver disponível para a data informada.
 
 Consulta os dados de negociação de um instrumento para uma data.
 
+![GET /ativos/PETR4 — dados reais do pregão de 30/04/2026](assets/screenshots/swagger-get-ativo.png)
+
 | Parâmetro | Tipo | Descrição |
 |---|---|---|
 | `ticker` | `string` (path) | Código do instrumento (ex: `PETR4`) |
 | `data` | `string` (query) | Data no formato `YYYY-MM-DD` |
 
 ```bash
-curl "http://localhost:8000/ativos/PETR4?data=2026-04-17"
+curl "http://localhost:8000/ativos/PETR4?data=2026-04-30"
 ```
 
 ---
 
 ## Airflow
 
-### DAG: `b3_ingestao_bvbg086`
+### DAG: `ingestao_bvbg086`
 
 | Propriedade | Valor |
 |---|---|
@@ -231,10 +235,20 @@ O sensor verifica a assinatura magic bytes do ZIP (`b'PK'`) via GET streaming �
 ### Acionar manualmente via UI
 
 1. Acesse http://localhost:8081
-2. Ative a DAG `b3_ingestao_bvbg086` (toggle)
+2. Ative a DAG `ingestao_bvbg086` (toggle)
 3. Clique em **Trigger DAG w/ config**
 4. Informe a data lógica desejada
 5. Monitore as tasks em **Grid view**
+
+![Airflow — DAG ingestao_bvbg086 com execuções agendadas](assets/screenshots/airflow-dag.png)
+
+---
+
+## Validação dos dados
+
+Os dados retornados pela API são comparáveis às fontes públicas de mercado. A consulta para `PETR4` em `2026-04-30` retorna `last_pric: 49.08` — valor consistente com o fechamento registrado em fontes independentes para o mesmo pregão.
+
+![PETR4 30/04/2026 — fechamento R$ 49,08 confirmado em fonte independente](assets/screenshots/petr4-validacao.png)
 
 ---
 
@@ -262,21 +276,36 @@ download_arquivo/
 │
 ├── src/
 │   ├── api.py                   # FastAPI — endpoints /pipeline/run e /ativos
-│   ├── main.py                  # Orquestrador do pipeline
-│   ├── baixar_arquivos_b3.py    # Download B3 (suporta múltiplos tipos de arquivo)
-│   ├── extrair_zip_duplo_b3.py  # Extração ZIP aninhado
-│   ├── parse_bvbg086_dinamico2.py  # Parser XML streaming (BVBG.086)
-│   ├── config/
-│   │   └── config.py            # Variáveis de ambiente com validação fail-fast
-│   └── infra/
-│       └── storage_handler.py   # Persistência Parquet/JSON e busca por ticker
+│   ├── main.py                  # CLI — entry point do pipeline
+│   ├── logger.py                # Logging estruturado (structlog + JSON)
+│   ├── domain/
+│   │   └── price_report.py      # Entidade de domínio — PriceReport
+│   ├── ports/
+│   │   ├── downloader.py        # Protocol FileDownloader
+│   │   ├── extractor.py         # Protocol FileExtractor
+│   │   ├── parser.py            # Protocol ReportParser[T]
+│   │   └── repository.py        # Protocol ReportRepository[T]
+│   ├── usecases/
+│   │   ├── ingest_price_report.py   # Orquestra download → parse → save
+│   │   └── query_price_report.py    # Consulta por ticker e data
+│   ├── infra/
+│   │   ├── exchange_downloader.py   # Download streaming (ExchangeFileType enum)
+│   │   ├── zip_extractor.py         # Extração ZIP aninhado
+│   │   ├── bvbg086_parser.py        # Parser XML streaming (ET.iterparse)
+│   │   └── parquet_repository.py    # Persistência Parquet e busca por ticker
+│   └── config/
+│       └── config.py            # Variáveis de ambiente com validação fail-fast
 │
-├── downloads/                   # ZIPs baixados da B3 (volume Docker)
+├── tests/
+│   ├── unit/                    # 36 testes pytest (mocks via Protocol)
+│   └── fixtures/                # XML mínimo válido BVBG.086
+│
+├── downloads/                   # ZIPs baixados (volume Docker)
 ├── extraidos/                   # XMLs extraídos por data (volume Docker)
-├── saida/                       # Saída Parquet e JSON
+├── saida/                       # Saída Parquet
 │
 ├── Dockerfile                   # Imagem da aplicação (python:3.13-slim)
-├── docker-compose.yml           # Orquestração completa (app + Airflow)
+├── docker-compose.yml           # Orquestração completa (app + Airflow 3.x)
 ├── requirements.txt             # Dependências Python
 └── .env.example                 # Template de configuração local
 ```
@@ -312,7 +341,7 @@ Gravar os registros parseados em PostgreSQL, substituindo os arquivos Parquet lo
 A B3 publica múltiplos arquivos BVBG.086 ao longo do pregão — geralmente o último é o definitivo. A camada Gold identifica e consolida a visão correta por data, eliminando duplicatas.
 
 ### Múltiplos tipos de arquivo
-O módulo `baixar_arquivos_b3.py` já suporta BVBG.087, BVBG.028, BVBG.029, BVBG.186 e BVBG.187. O próximo passo é criar parsers e pipelines dedicados para cada processo de negócio — precificação, cadastro de instrumentos, derivativos — cada um com suas próprias regras de transformação e validação.
+O enum `ExchangeFileType` já enumera BVBG.087, BVBG.028, BVBG.029, BVBG.186 e BVBG.187. O próximo passo é criar parsers e pipelines dedicados para cada processo de negócio — precificação, cadastro de instrumentos, derivativos — cada um com suas próprias regras de transformação e validação.
 
 ### Agente de IA
 Interface conversacional (LangGraph + Chainlit) para consulta de dados via linguagem natural: *"Qual foi o volume negociado de VALE3 na semana passada?"*, *"Quais ações tiveram maior variação hoje?"*. Alimentado pela camada Gold no PostgreSQL.
