@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BvBg xmlns="urn:bvmf.217.01.xsd">
+  <PricRpt>
+    <SctyId>
+      <TckrSymb>PETR4</TckrSymb>
+    </SctyId>
+    <TradDt>
+      <Dt>2026-04-16</Dt>
+    </TradDt>
+    <FinInstrmId>
+      <OthrId>
+        <Id>123456789</Id>
+      </OthrId>
+    </FinInstrmId>
+    <TradDtls>
+      <TradQty>1000</TradQty>
+    </TradDtls>
+    <FinInstrmAttrbts>
+      <OpnIntrst>500.0</OpnIntrst>
+      <BestBidPric Ccy="BRL">10.50</BestBidPric>
+    </FinInstrmAttrbts>
+  </PricRpt>
+  <PricRpt>
+    <SctyId>
+      <TckrSymb>VALE3</TckrSymb>
+    </SctyId>
+    <TradDt>
+      <Dt>2026-04-16</Dt>
+    </TradDt>
+    <FinInstrmId>
+      <OthrId>
+        <Id>987654321</Id>
+      </OthrId>
+    </FinInstrmId>
+    <TradDtls>
+      <TradQty>2000</TradQty>
+    </TradDtls>
+    <FinInstrmAttrbts>
+      <OpnIntrst>750.0</OpnIntrst>
+      <BestBidPric Ccy="BRL">55.20</BestBidPric>
+    </FinInstrmAttrbts>
+  </PricRpt>
+</BvBg>

@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+downloads/
+extraidos/
+saida/
+dags/
+*.zip
+*.xml
+*.parquet
+*.json
+.git/
+docs/
+*.md
+*.sh
