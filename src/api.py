@@ -1,28 +1,65 @@
-from fastapi import FastAPI
-from storage_handler import StorageHandler
+from fastapi import Depends, FastAPI, HTTPException, Query
 
-# Aqui vamos simular que os dados já foram parseados pelo parse_bvbg086_dinamico2
-# Em produção, você chamaria o parse antes e injetaria aqui
-from parse_bvbg086_dinamico2 import parse_diretorio_bvbg086
-from src.config import SRC_EXTRAIDOS
+from src.config import SRC_DOWNLOADS, SRC_EXTRAIDOS
+from src.logger import configure_logging, get_logger
 
-# Pasta onde estão os XMLs
-#PASTA_XML = "/data/EstudoPython/download_arquivo/extraidos/2025-06-30/PR250630"
-registros = parse_diretorio_bvbg086(SRC_EXTRAIDOS)
+configure_logging()
+_log = get_logger(__name__)
+from src.infra.bvbg086_parser import BVBG086Parser
+from src.infra.exchange_downloader import ExchangeFileDownloader
+from src.infra.parquet_repository import ParquetRepository
+from src.infra.zip_extractor import ZipExtractor
+from src.usecases.ingest_price_report import IngestPriceReportUseCase
+from src.usecases.query_price_report import QueryPriceReportUseCase
 
-# Cria o handler
-handler = StorageHandler(registros)
+app = FastAPI(title="Post-Trade Market Data API")
 
-# Salva também em arquivos (JSON + Parquet)
-handler.salvar_json("./saida/registros.json")
-handler.salvar_parquet("./saida/registros.parquet")
 
-# API
-app = FastAPI()
+def _ingest_use_case() -> IngestPriceReportUseCase:
+    return IngestPriceReportUseCase(
+        downloader=ExchangeFileDownloader(SRC_DOWNLOADS),
+        extractor=ZipExtractor(SRC_EXTRAIDOS),
+        parser=BVBG086Parser(),
+        repository=ParquetRepository(SRC_EXTRAIDOS),
+    )
+
+
+def _query_use_case() -> QueryPriceReportUseCase:
+    return QueryPriceReportUseCase(
+        repository=ParquetRepository(SRC_EXTRAIDOS),
+    )
+
+
+@app.post("/pipeline/run")
+def run_pipeline(
+    data: str = Query(..., description="Data no formato YYYY-MM-DD"),
+    use_case: IngestPriceReportUseCase = Depends(_ingest_use_case),
+):
+    saved = use_case.execute(data)
+    if not saved:
+        raise HTTPException(status_code=422, detail=f"Nenhum registro extraído para {data}.")
+    return {"status": "ok", "data": data, "registros": saved}
+
 
 @app.get("/ativos/{ticker}")
-def get_ativo(ticker: str):
-    resultados = handler.buscar_ativo(ticker)
-    if resultados:
-        return resultados
-    return {"erro": "Ativo não encontrado"}
+def get_ativo(
+    ticker: str,
+    data: str = Query(..., description="Data no formato YYYY-MM-DD"),
+    use_case: QueryPriceReportUseCase = Depends(_query_use_case),
+):
+    reports = use_case.execute(ticker, data)
+    if not reports:
+        raise HTTPException(status_code=404, detail="Ativo não encontrado")
+    return [
+        {
+            "ticker": r.ticker,
+            "trade_date": r.trade_date,
+            "source_file": r.source_file,
+            "file_seq": r.file_seq,
+            "processed_at": r.processed_at,
+            "codigo": r.codigo,
+            "trad_qty": r.trad_qty,
+            **r.attributes,
+        }
+        for r in reports
+    ]

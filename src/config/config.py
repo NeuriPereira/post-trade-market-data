@@ -1,10 +1,13 @@
 import os
 from dotenv import load_dotenv
 
-# Carrega as variáveis do .env
 load_dotenv()
 
-# Agora expõe as variáveis
-SRC_PATH = os.getenv("SRC_PATH")
-SRC_DOWNLOADS = os.getenv("SRC_DOWNLOADS")
-SRC_EXTRAIDOS = os.getenv("SRC_EXTRAIDOS")
+def _require(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise EnvironmentError(f"Variável de ambiente obrigatória não definida: {name}")
+    return value
+
+SRC_DOWNLOADS = _require("SRC_DOWNLOADS")
+SRC_EXTRAIDOS = _require("SRC_EXTRAIDOS")
