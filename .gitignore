@@ -90,17 +90,10 @@ htmlcov/
 *.sqlite3
 
 # ============================================================================
-# Dados gerados em runtime — não versionar conteúdo, manter estrutura
+# Dados gerados em runtime — não versionar
 # ============================================================================
-downloads/**
-!downloads/.gitignore
-extraidos/**
-!extraidos/.gitignore
-saida/**
-!saida/.gitignore
-
-# ============================================================================
-# Documentação local (não publicar no GitHub)
-# ============================================================================
-ARCHITECTURE.md
+downloads/
+extraidos/
+saida/
 docs/
+ARCHITECTURE.md
