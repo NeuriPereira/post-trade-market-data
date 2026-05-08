@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: deepstore
+  labels:
+    layer: storage
+    project: clearing-pipeline

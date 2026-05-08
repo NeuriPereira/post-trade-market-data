@@ -1,0 +1,27 @@
+# MinIO — valores de instalação (sem segredos)
+# Segredos ficam em secrets/minio-secret.yaml (gitignored)
+# Instalar com: helm install minio minio-official/minio -n deepstore -f k8s/minio/values.yaml
+
+# Standalone: 1 pod, 1 PVC — adequado para desenvolvimento local
+mode: standalone
+
+existingSecret: minio-credentials
+
+buckets:
+  - name: price-report-raw
+    policy: none
+    purge: false
+
+persistence:
+  size: 10Gi
+
+service:
+  type: ClusterIP
+
+consoleService:
+  type: ClusterIP
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
